@@ -12,41 +12,41 @@ func NewLevelDBStore(dbPath string) (*LevelDBStore, error) {
 	if err != nil {
 		return nil, err
 	}
-	ls  := &LevelDBStore{
-		db:db,
+	ls := &LevelDBStore{
+		db:   db,
 		keys: map[string]interface{}{},
-		mu:&sync.RWMutex{},
+		mu:   &sync.RWMutex{},
 	}
 	return ls, nil
 }
 
 type LevelDBStore struct {
-	db  *leveldb.DB
+	db   *leveldb.DB
 	keys map[string]interface{}
-	opt *opt.Options
-	wo  *opt.WriteOptions
-	ro  *opt.ReadOptions
-	mu  *sync.RWMutex
+	opt  *opt.Options
+	wo   *opt.WriteOptions
+	ro   *opt.ReadOptions
+	mu   *sync.RWMutex
 }
 
-func (ls *LevelDBStore) Set(key []byte, val []byte) bool {
+func (ls *LevelDBStore) Set(key []byte, val []byte) error {
 	ok, _ := ls.db.Has(key, ls.ro)
 	if ok {
-		return false
+		return errors.New("key " + string(key) + "already exited")
 	}
-	if  ls.db.Put(key, val, ls.wo) == nil {
+	err := ls.db.Put(key, val, ls.wo)
+	if err == nil {
 		ls.keys[string(key)] = nil
-		return true
 	}
-	return false
+	return err
 }
 
-func (ls *LevelDBStore) Update(key []byte, val []byte) bool {
-	if ls.db.Put(key, val, ls.wo) == nil{
+func (ls *LevelDBStore) Update(key []byte, val []byte) error {
+	err := ls.db.Put(key, val, ls.wo)
+	if err == nil {
 		ls.keys[string(key)] = nil
-		return true
 	}
-	return false
+	return err
 }
 
 func (ls *LevelDBStore) Get(key []byte) ([]byte, error) {
